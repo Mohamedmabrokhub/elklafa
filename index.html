@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>الكلافة | مقياس الغباء الأسبوعي</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#12100d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="الكلافة">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" type="image/png" href="assets/icon-32.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+<div id="toast"></div>
+
+<!-- SPLASH -->
+<div id="splash" class="screen">
+  <div class="splash-inner">
+    <img src="assets/icon-512.png" alt="الكلافة" class="splash-logo">
+    <div class="splash-title">الكلافة</div>
+    <div class="splash-sub">بنحمّل درجة غبائك...</div>
+    <div class="splash-loader"><span></span><span></span><span></span></div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen" class="screen hidden">
+  <div class="login-card">
+    <img src="assets/icon-192.png" alt="الكلافة" class="login-logo">
+    <h1 class="brand-title">الكلافة</h1>
+    <p class="brand-sub">مقياس الغباء الأسبوعي الرسمي 🐒</p>
+
+    <div class="field-label">مين حضرتك؟</div>
+    <div id="user-picker" class="user-picker"></div>
+
+    <div class="field-label">الرقم السري</div>
+    <input id="password-input" type="password" inputmode="numeric" class="text-input" placeholder="اكتب الرقم السري بتاعك" autocomplete="off">
+
+    <button id="login-btn" class="btn btn-primary btn-block">يلا بينا 🚪</button>
+    <div id="login-error" class="login-error hidden">غلط يا نجم، جرب تاني 🙃</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen" class="screen hidden">
+
+  <header class="app-header">
+    <div class="header-left">
+      <img src="assets/icon-32.png" class="header-logo" alt="">
+      <span class="header-title">الكلافة</span>
+    </div>
+    <div class="header-right">
+      <span id="sync-badge" class="sync-badge" title="حالة المزامنة">☁️</span>
+      <span id="me-avatar" class="me-avatar"></span>
+    </div>
+  </header>
+
+  <main class="app-main">
+
+    <!-- TODAY TAB -->
+    <section id="tab-today" class="tab-panel">
+      <div id="today-card" class="card"></div>
+
+      <div class="section-heading">
+        <span>قيّم غباء أصحابك</span>
+        <span id="pending-count" class="pill">0</span>
+      </div>
+      <div id="pending-list" class="stack"></div>
+    </section>
+
+    <!-- LEADERBOARD TAB -->
+    <section id="tab-leaderboard" class="tab-panel hidden">
+      <div class="week-switcher">
+        <button id="week-prev" class="icon-btn">›</button>
+        <div id="week-label" class="week-label"></div>
+        <button id="week-next" class="icon-btn">‹</button>
+      </div>
+
+      <div id="winner-spotlight" class="winner-spotlight"></div>
+
+      <div id="leaderboard-list" class="stack"></div>
+    </section>
+
+    <!-- HISTORY TAB -->
+    <section id="tab-history" class="tab-panel hidden">
+      <div id="history-filters" class="chip-row"></div>
+      <div id="history-list" class="stack"></div>
+    </section>
+
+    <!-- SETTINGS TAB -->
+    <section id="tab-settings" class="tab-panel hidden">
+      <div class="card">
+        <div class="card-title">☁️ المزامنة مع الجروب</div>
+        <p class="muted-text">علشان كل واحد فيكو يشوف مواقف التاني (حتى لو كل واحد فاتح التطبيق من موبايله)، لازم تفعّلوا المزامنة. اعملوا حساب مجاني على jsonbin.io (دقيقة واحدة) وحطوا البيانات هنا. نفس الـ Bin ID والمفتاح لازم يتحطوا عند الخمسة كلهم.</p>
+        <div class="field-label">Bin ID</div>
+        <input id="sync-bin" class="text-input" placeholder="مثال: 6591a2...">
+        <div class="field-label">Master Key</div>
+        <input id="sync-key" class="text-input" placeholder="X-Master-Key بتاعك">
+        <label class="switch-row">
+          <span>تفعيل المزامنة</span>
+          <input type="checkbox" id="sync-toggle">
+        </label>
+        <button id="sync-save" class="btn btn-secondary btn-block">حفظ واختبار الاتصال</button>
+        <div id="sync-status" class="muted-text"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📦 نسخة احتياطية</div>
+        <button id="export-btn" class="btn btn-ghost btn-block">تصدير البيانات (JSON)</button>
+      </div>
+
+      <div id="admin-card" class="card hidden">
+        <div class="card-title">👑 لوحة الأدمن</div>
+        <button id="reset-week-btn" class="btn btn-ghost btn-block">تصفير ترتيب الأسبوع الحالي</button>
+        <button id="reset-all-btn" class="btn btn-danger btn-block">حذف كل البيانات نهائيًا</button>
+      </div>
+
+      <button id="logout-btn" class="btn btn-ghost btn-block">تسجيل الخروج</button>
+      <div class="version-tag">الكلافة v1.0</div>
+    </section>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="today"><span class="nav-icon">📝</span><span>اليوم</span></button>
+    <button class="nav-btn" data-tab="leaderboard"><span class="nav-icon">🏆</span><span>الترتيب</span></button>
+    <button class="nav-btn" data-tab="history"><span class="nav-icon">📜</span><span>السجل</span></button>
+    <button class="nav-btn" data-tab="settings"><span class="nav-icon">⚙️</span><span>إعدادات</span></button>
+  </nav>
+
+</div>
+
+<!-- Rating card template -->
+<template id="tpl-pending-entry">
+  <div class="card entry-card">
+    <div class="entry-head">
+      <span class="entry-avatar"></span>
+      <div class="entry-meta">
+        <div class="entry-name"></div>
+        <div class="entry-date"></div>
+      </div>
+    </div>
+    <div class="entry-text"></div>
+    <div class="gauge-wrap">
+      <svg class="gauge" viewBox="0 0 200 110">
+        <path class="gauge-track" d="M10,100 A90,90 0 0,1 190,100"></path>
+        <path class="gauge-fill" d="M10,100 A90,90 0 0,1 190,100"></path>
+        <g class="gauge-needle"><line x1="100" y1="100" x2="100" y2="25"></line><circle cx="100" cy="100" r="7"></circle></g>
+      </svg>
+      <div class="gauge-value">0</div>
+    </div>
+    <input type="range" min="0" max="10" step="1" value="0" class="rating-slider">
+    <button class="btn btn-primary btn-block rate-submit-btn">أكّد التقييم</button>
+  </div>
+</template>
+
+<!-- History item template -->
+<template id="tpl-history-entry">
+  <div class="card history-card">
+    <div class="entry-head">
+      <span class="entry-avatar"></span>
+      <div class="entry-meta">
+        <div class="entry-name"></div>
+        <div class="entry-date"></div>
+      </div>
+      <div class="score-chip"></div>
+    </div>
+    <div class="entry-text"></div>
+    <div class="ratings-breakdown"></div>
+  </div>
+</template>
+
+<script src="app.js"></script>
+</body>
+</html>
